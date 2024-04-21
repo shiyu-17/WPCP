@@ -119,8 +119,8 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        # Ct 150*3*3 -> 150*224*224
-        x = F.interpolate(x, scale_factor=48, mode='bilinear', align_corners=False)
+        # 3*48 - 144 - 72 - 36 -18
+        x = F.interpolate(x, scale_factor=45.3333333, mode='bilinear', align_corners=False)
         #
         x = self.layer1(x)
         x = self.layer2(x)

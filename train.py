@@ -19,7 +19,7 @@ from torchsummary import summary
 
 
 from models.wisppn_resnet import ResNet, ResidualBlock, Bottleneck
-batch_size = 32
+batch_size = 32 
 num_epochs = 20
 
 learning_rate = 0.001
@@ -27,7 +27,7 @@ learning_rate = 0.001
 def getMinibatch(file_names):
     file_num = len(file_names)
     csi_data = torch.zeros(file_num, 30*5, 3, 3)
-    jmatrix_label = torch.zeros(file_num, 4, 18, 18)
+    jmatrix_label = torch.zeros(file_num, 4, 17, 17)
     for i in range(file_num):
         data = hdf5storage.loadmat(file_names[i], variable_names={'csi_serial', 'jointsMatrix'})
         csi_data[i, :, :, :] = torch.from_numpy(data['csi_serial']).type(torch.FloatTensor).view(-1, 3, 3)
@@ -35,8 +35,8 @@ def getMinibatch(file_names):
     return csi_data, jmatrix_label
 
 
-# mats = glob.glob('E:/Mycode/WiSPPN/raw/output/*.mat')
-mats = glob.glob('E:/Mycode/WiSPPN/examples/oct17set1_fw_1814.mat')
+mats = glob.glob('E:/Mycode/WPCP/01.mat')
+# mats = glob.glob('E:/Mycode/WiSPPN/examples/oct17set1_fw_1814.mat')
 mats_num = len(mats)
 batch_num = int(np.floor(mats_num/batch_size))
 
