@@ -18,21 +18,35 @@ import torch.nn as nn
 from torchsummary import summary
 from PIL import Image
 
-from models.wisppn_unet import UNet  
+from models.wisppn_unet import UNet 
+import torchvision.transforms as transforms 
 
 batch_size = 32
 num_epochs = 20
 learning_rate = 0.001
+
+height = 256
+width = 256
+
+# 图片预处理
+img_transform = transforms.Compose([
+    transforms.Resize((height, width)),  # 调整图片大小
+    transforms.ToTensor(),  # 将图片转换为张量
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # 归一化
+])
 
 def getMinibatch(file_names):
     file_num = len(file_names)
     jmatrix_label = torch.zeros(file_num, 4, 17, 17)
     csi_data = []  
     for i, file_name in enumerate(file_names):
-        img = Image.open(file_name) 
-        img = img.resize((3, 30*5))  # 假设图片尺寸需要缩放到 (3, 30*5)
-        img_tensor = torch.tensor(np.array(img)).permute(2, 0, 1).float()  # 转换为张量并调整通道顺序
-        csi_data.append(img_tensor)
+        # 构建图片文件路径
+        img_file_path = os.path.join("pic", os.path.basename(file_name).replace('.mat', '.jpg'))
+        img = Image.open(img_file_path)
+        
+        # 图片预处理
+        img = img_transform(img)
+        csi_data.append(img)
 
         data = hdf5storage.loadmat(file_name, variable_names={'jointsMatrix'})
         jmatrix_label[i] = torch.from_numpy(data['jointsMatrix']).type(torch.FloatTensor)
@@ -40,7 +54,7 @@ def getMinibatch(file_names):
     csi_data = torch.stack(csi_data, dim=0)
     return csi_data, jmatrix_label
 
-mats = glob.glob('E:/Mycode/WPCP/01.mat')
+mats = glob.glob('E:/Mycode/WPCP/*.mat')
 mats_num = len(mats)
 batch_num = int(np.floor(mats_num/batch_size))
 

@@ -66,7 +66,7 @@ for epoch_index in range(num_epochs):
 
         csi_data, jmatrix_label = getMinibatch(file_names)
 
-        csi_data = Variable(csi_data.cuda())
+        csi_data = Variable(csi_data.cuda()) # csi_data: 32*30*5*3*3
         xy = Variable(jmatrix_label[:, 0:2, :, :].cuda())
         confidence = Variable(jmatrix_label[:, 2:4, :, :].cuda())
 
