@@ -28,7 +28,7 @@ learning_rate = 0.001
 height = 256
 width = 256
 
-# 图片预处理
+# 图片预处理 120*120
 img_transform = transforms.Compose([
     transforms.Resize((height, width)),  # 调整图片大小
     transforms.ToTensor(),  # 将图片转换为张量
@@ -41,20 +41,21 @@ def getMinibatch(file_names):
     csi_data = []  
     for i, file_name in enumerate(file_names):
         # 构建图片文件路径
-        img_file_path = os.path.join("pic", os.path.basename(file_name).replace('.mat', '.jpg'))
-        img = Image.open(img_file_path)
+        img_file_path = os.path.join("E:\dataset\pic_960\csi_pic", os.path.basename(file_name).replace('.mat', '.png'))
+        img = Image.open(img_file_path).convert("RGB")
         
         # 图片预处理
         img = img_transform(img)
         csi_data.append(img)
 
         data = hdf5storage.loadmat(file_name, variable_names={'jointsMatrix'})
-        jmatrix_label[i] = torch.from_numpy(data['jointsMatrix']).type(torch.FloatTensor)
+        joints_matrix = data['jointsMatrix'].transpose()
+        jmatrix_label[i] = torch.from_numpy(joints_matrix).type(torch.FloatTensor)
     # 将列表转换为张量
     csi_data = torch.stack(csi_data, dim=0)
     return csi_data, jmatrix_label
 
-mats = glob.glob('E:/Mycode/WPCP/*.mat')
+mats = glob.glob('E:\dataset\pic_960\keypoints\*.mat')
 mats_num = len(mats)
 batch_num = int(np.floor(mats_num/batch_size))
 
