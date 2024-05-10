@@ -76,6 +76,8 @@ class UNet(nn.Module):
         self.up4 = Up(128, 64, bilinear)
         self.outc = OutConv(64, out_channels)
 
+        self.adaptive_pool = nn.AdaptiveAvgPool2d((17, 17)) # new
+
     def forward(self, x):
         x1 = self.inc(x)
         x2 = self.down1(x1)
@@ -84,7 +86,10 @@ class UNet(nn.Module):
         x5 = self.down4(x4)
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
-        x = self.up3(x, x2)
+        x = self.up3(x, x2) 
         x = self.up4(x, x1)
         logits = self.outc(x)
-        return logits
+
+        x = self.adaptive_pool(logits) # new
+
+        return x
