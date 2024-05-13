@@ -19,7 +19,7 @@ from torchsummary import summary
 
 
 from models.wisppn_resnet import ResNet, ResidualBlock, Bottleneck
-batch_size = 32 
+batch_size = 32
 num_epochs = 20
 
 learning_rate = 0.001

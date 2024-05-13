@@ -23,7 +23,7 @@ import torchvision.transforms as transforms
 
 batch_size = 32
 num_epochs = 20
-learning_rate = 0.01
+learning_rate = 0.1
 
 height = 256
 width = 256
