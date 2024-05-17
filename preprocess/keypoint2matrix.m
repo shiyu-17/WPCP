@@ -1,5 +1,5 @@
 % Specify the path to your JSON file
-json_file_path = 'E:\dataset\pic_960\keypoints.json';
+json_file_path = 'E:\dataset\pic_960\file1_updated.json';
 output_folder = 'E:\dataset\pic_960\keypoints';
 % Load and process the JSON file
 try
@@ -13,11 +13,12 @@ catch
 end
 
 % Loop through all annotations
-annotations = val.annotations;
+annotations = val;
 for i = 1:numel(annotations)
-    annotation = annotations{i};  % 使用大括号索引
+    annotation = annotations(i);  % 使用大括号索引
     keypoints = annotation.keypoints;
     pose = annotation.pose;
+    image_id = annotation.image_id;
 
     % Construct joints vector and matrix
     x = keypoints(1:3:end);
@@ -37,8 +38,8 @@ for i = 1:numel(annotations)
     end
 
     % Specify the image path based on the pose
-    %image_path = strcat('E:\dataset\pic_960\csi_pic', pose, '.jpg');
-    %frame = imread(image_path);
+    image_path = sprintf('E:\\dataset\\pic_960\\pic\\%012d.jpg', image_id);
+    frame = imread(image_path);
 
     % Load the raw1.mat file
     %load('E:\Mycode\WiSPPN\raw\raw1.mat', 'mat2');
@@ -47,5 +48,5 @@ for i = 1:numel(annotations)
     %csi_serial = mat2(20:25, :, :, :);
 
     % Save only jointsMatrix and jointsVector
-    save(fullfile(output_folder, strcat(pose, '.mat')),'jointsVector', 'jointsMatrix', '-v7.3');
+    save(fullfile(output_folder, strcat(pose, '.mat')),'jointsVector', 'jointsMatrix', 'frame', '-v7.3');
 end
