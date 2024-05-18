@@ -15,7 +15,7 @@ from random import shuffle
 import time
 import os
 import cv2
-
+# os.path.join("/raw", os.path.basename(test_mat_file).replace('.mat', '.png'))
 limb = np.array([[0,1],[0,14],[0,15],[14,16],[15,17],[1,2],[1,5],[1,8],[1,11],[2,3],[3,4],[5,6],[6,7],[8,9],[9,10],[11,12],[12,13]])
 
 # data = hdf5storage.loadmat('examples/oct17set1_fw_1814.mat', variable_names={'csi_serial', 'frame'})

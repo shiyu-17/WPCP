@@ -14,10 +14,10 @@ import hdf5storage
 from models.wisppn_unet import UNet
 import torchvision.transforms as transforms
 
-# 定义肢体连接
-limb = np.array([[0, 1], [0, 14], [0, 15], [14, 16], [15, 17], [1, 2], [1, 5], [1, 8], [1, 11], [2, 3], [3, 4], [5, 6], [6, 7], [8, 9], [9, 10], [11, 12], [12, 13]])
+limb = np.array([[15, 13], [13, 11], [16, 14], [14, 12], [11, 12], [5, 11], [6, 12],
+            [5, 6], [5, 7], [6, 8], [7, 9], [8, 10], [1, 2], [0, 1], [0, 2],
+            [1, 3], [2, 4], [3, 5], [4, 6]])
 
-# 加载模型
 model_path = 'weights/unet_model.pkl'
 unet_model = UNet(in_channels=3, out_channels=2)
 unet_model.load_state_dict(torch.load(model_path))
@@ -31,12 +31,13 @@ img_transform = transforms.Compose([
 ])
 
 # 加载测试数据
-test_mat_file = 'raw/output/01.mat'
-data = hdf5storage.loadmat(test_mat_file, variable_names={'csi_serial', 'frame'})
+test_mat_file = 'raw/hbp01.mat'
+data = hdf5storage.loadmat(test_mat_file, variable_names={'frame'})
 frame = data['frame']
 
 # 加载并预处理图片
-img_file_path = os.path.join("/user90/djy/lsy/wpcp_data/test/csi_pic", os.path.basename(test_mat_file).replace('.mat', '.png'))
+img_file_path = "raw/hbp01.png"
+# os.path.join("/raw", os.path.basename(test_mat_file).replace('.mat', '.png'))
 if not os.path.exists(img_file_path):
     raise FileNotFoundError("Image file not found:", img_file_path)
 
@@ -64,7 +65,7 @@ for index in range(17):
 # 显示图像并绘制关节点和肢体连接
 plt.imshow(cv2.resize(frame, (1280, 720)))
 for i in range(len(limb)):
-    plt.plot(poseVector_x[[limb[i, 0], limb[i, 1]]], poseVector_y[[limb[i, 0], limb[i, 1]]], marker='o')
+    plt.plot(poseVector_x[[limb[i, 0], limb[i, 1]]]* frame.shape[1] / 256, poseVector_y[[limb[i, 0], limb[i, 1]]]* frame.shape[0] / 256, marker='o')
 plt.show()
 
 # 确保cv2窗口关闭
