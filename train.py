@@ -12,21 +12,29 @@ import sys
 import glob
 import hdf5storage
 from random import shuffle
-import time
 import os
 import torch.nn as nn
 from torchsummary import summary
 from PIL import Image
-
 from models.wisppn_unet import UNet 
 import torchvision.transforms as transforms 
+import logging
 
 batch_size = 32
 num_epochs = 20
-learning_rate = 0.1
+learning_rate = 0.01
 
 height = 256
 width = 256
+
+# 设置日志文件保存目录
+log_dir = "/user90/djy/lsy/WPCP/logs"
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+# 设置日志文件名，使用当前时间命名
+log_filename = os.path.join(log_dir, time.strftime("%Y%m%d-%H%M%S") + ".txt")
+logging.basicConfig(filename=log_filename, level=logging.INFO, format='%(asctime)s - %(message)s')
 
 # 图片预处理 120*120
 img_transform = transforms.Compose([
@@ -58,7 +66,7 @@ def getMinibatch(file_names):
     return csi_data, jmatrix_label
 
 mats = glob.glob('/user90/djy/lsy/wpcp_data/train/keypoints/*.mat')
-print("Total number of samples:", len(mats))
+logging.info("Total number of samples: {}".format(len(mats)))
 mats_num = len(mats)
 batch_num = int(np.floor(mats_num/batch_size))
 
@@ -73,8 +81,8 @@ unet_model.train()
 
 for epoch_index in range(num_epochs):
     scheduler.step()
-    print("Epoch:", epoch_index + 1)
-    print("Current Learning Rate:", scheduler.get_lr())
+    logging.info("Epoch: {}".format(epoch_index + 1))
+    logging.info("Current Learning Rate: {}".format(scheduler.get_lr()))
     start = time.time()
     # shuffling dataset
     shuffle(mats)
@@ -97,14 +105,14 @@ for epoch_index in range(num_epochs):
         loss = criterion_L2(torch.mul(confidence, pred_xy), torch.mul(confidence, xy))
         # loss = criterion_L2(pred_xy, xy)
 
-        print("Batch [{} / {}], Loss: {:.6f}".format(batch_index + 1, batch_num, loss.item()))
+        logging.info("Batch [{} / {}], Loss: {:.6f}".format(batch_index + 1, batch_num, loss.item()))
         optimizer.zero_grad()
 
         loss.backward()
         optimizer.step()
 
     endl = time.time()
-    print('Epoch Time:', (endl - start) / 60, 'minutes')
+    logging.info('Epoch Time: {} minutes'.format((endl - start) / 60))
 
 torch.save(unet_model.state_dict(), '/user90/djy/lsy/WPCP/weights/unet_model.pkl')  # 保存 U-Net 模型的参数
 # summary(unet_model, (3, 256, 256), batch_size=1)
