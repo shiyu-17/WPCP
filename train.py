@@ -20,7 +20,7 @@ from models.wisppn_unet import UNet
 import torchvision.transforms as transforms 
 import logging
 
-batch_size = 32
+batch_size = 16
 num_epochs = 20
 learning_rate = 0.01
 
@@ -28,7 +28,7 @@ height = 256
 width = 256
 
 # 设置日志文件保存目录
-log_dir = "/user90/djy/lsy/WPCP/logs"
+log_dir = "/home/featurize/lsy/WPCP/logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
@@ -49,7 +49,7 @@ def getMinibatch(file_names):
     csi_data = []  
     for i, file_name in enumerate(file_names):
         # 构建图片文件路径
-        img_file_path = os.path.join("/user90/djy/lsy/wpcp_data/train/csi_pic", os.path.basename(file_name).replace('.mat', '.png'))
+        img_file_path = os.path.join("/home/featurize/lsy/wpcp_data/csi_pic", os.path.basename(file_name).replace('.mat', '.png'))
         if not os.path.exists(img_file_path):
             raise FileNotFoundError("Image file not found:", img_file_path)
         img = Image.open(img_file_path).convert("RGB")
@@ -61,11 +61,15 @@ def getMinibatch(file_names):
         data = hdf5storage.loadmat(file_name, variable_names={'jointsMatrix'})
         joints_matrix = data['jointsMatrix'].transpose() # 17*17
         jmatrix_label[i, :, :, :] = torch.from_numpy(joints_matrix).type(torch.FloatTensor)
+
+    for img in csi_data:
+        assert img.size() == (3, height, width), f"Image size mismatch: {img.size()}"
+
     # 将列表转换为张量
     csi_data = torch.stack(csi_data, dim=0)
     return csi_data, jmatrix_label
 
-mats = glob.glob('/user90/djy/lsy/wpcp_data/train/keypoints/*.mat')
+mats = glob.glob('/home/featurize/lsy/wpcp_data/keypoints/*.mat')
 logging.info("Total number of samples: {}".format(len(mats)))
 mats_num = len(mats)
 batch_num = int(np.floor(mats_num/batch_size))
@@ -98,9 +102,11 @@ for epoch_index in range(num_epochs):
 
         csi_data = Variable(csi_data.cuda())
         xy = Variable(jmatrix_label[:, 0:2, :, :].cuda())
+        print(xy.size())
         confidence = Variable(jmatrix_label[:, 2:4, :, :].cuda())
 
         pred_xy = unet_model(csi_data)
+        print(pred_xy.size())
 
         loss = criterion_L2(torch.mul(confidence, pred_xy), torch.mul(confidence, xy))
         # loss = criterion_L2(pred_xy, xy)
@@ -111,8 +117,10 @@ for epoch_index in range(num_epochs):
         loss.backward()
         optimizer.step()
 
+    torch.cuda.empty_cache()
+
     endl = time.time()
     logging.info('Epoch Time: {} minutes'.format((endl - start) / 60))
 
-torch.save(unet_model.state_dict(), '/user90/djy/lsy/WPCP/weights/unet_model.pkl')  # 保存 U-Net 模型的参数
+torch.save(unet_model.state_dict(), '/home/featurize/lsy/WPCP/weights/unet_model_cdn.pkl')  # 保存 U-Net 模型的参数
 # summary(unet_model, (3, 256, 256), batch_size=1)

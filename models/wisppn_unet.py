@@ -1,15 +1,20 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mmcv.ops import DeformConv2dPack as DCN
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
+        self.deform_groups = 1  # 设置变形组大小  1 / 3
+        assert in_channels % self.deform_groups == 0, "in_channels must be divisible by deform_groups"
+        assert out_channels % self.deform_groups == 0, "out_channels must be divisible by deform_groups"
+
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            DCN(out_channels, out_channels, kernel_size=3, padding=1, deform_groups=self.deform_groups),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
