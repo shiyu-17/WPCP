@@ -102,11 +102,9 @@ for epoch_index in range(num_epochs):
 
         csi_data = Variable(csi_data.cuda())
         xy = Variable(jmatrix_label[:, 0:2, :, :].cuda())
-        print(xy.size())
         confidence = Variable(jmatrix_label[:, 2:4, :, :].cuda())
 
         pred_xy = unet_model(csi_data)
-        print(pred_xy.size())
 
         loss = criterion_L2(torch.mul(confidence, pred_xy), torch.mul(confidence, xy))
         # loss = criterion_L2(pred_xy, xy)
