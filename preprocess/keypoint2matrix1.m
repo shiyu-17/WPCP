@@ -1,6 +1,6 @@
 % Specify the path to your JSON file
-json_file_path = 'E:\dataset\pic_960\keypoints.json';
-output_folder = 'E:\dataset\pic_960\keypoints';
+json_file_path = 'E:\Mycode\PythonScript\keypoints_train_results_0.json';
+output_folder = 'E:\A504-processed\train-keypoints';
 % Load and process the JSON file
 try
     fid = fopen(json_file_path);
@@ -13,11 +13,11 @@ catch
 end
 
 % Loop through all annotations
-annotations = val.annotations;
+annotations = val;
 for i = 1:numel(annotations)
-    annotation = annotations{i};  % 使用大括号索引
+    annotation = annotations(i);  % 使用大括号索引
     keypoints = annotation.keypoints;
-    pose = annotation.pose;
+    image_id = annotation.image_id;
 
     % Construct joints vector and matrix
     x = keypoints(1:3:end);
@@ -46,6 +46,8 @@ for i = 1:numel(annotations)
     % Extract the first 5 time steps
     %csi_serial = mat2(20:25, :, :, :);
 
+    formatted_id = sprintf('%012d', image_id);
+
     % Save only jointsMatrix and jointsVector
-    save(fullfile(output_folder, strcat(pose, '.mat')),'jointsVector', 'jointsMatrix', '-v7.3');
+    save(fullfile(output_folder, strcat(formatted_id, '.mat')),'jointsVector', 'jointsMatrix', '-v7.3');
 end

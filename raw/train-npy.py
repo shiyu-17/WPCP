@@ -38,7 +38,7 @@ logging.basicConfig(filename=log_filename, level=logging.INFO, format='%(asctime
 
 # 图片预处理 120*120
 img_transform = transforms.Compose([
-    # transforms.Resize((height, width)),  # 调整图片大小
+    transforms.Resize((height, width)),  # 调整图片大小
     transforms.ToTensor(),  # 将图片转换为张量
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # 归一化
 ])
@@ -49,17 +49,29 @@ def getMinibatch(file_names):
     csi_data = []  
     for i, file_name in enumerate(file_names):
         # 构建图片文件路径
-        img_file_path = os.path.join("/home/featurize/lsy/wpcp_data/csi_pic", os.path.basename(file_name).replace('.mat', '.png'))
-        if not os.path.exists(img_file_path):
-            raise FileNotFoundError("Image file not found:", img_file_path)
-        img = Image.open(img_file_path).convert("RGB")
+        npy_file_path = os.path.join("/home/featurize/lsy/dataset/train-npy", os.path.basename(file_name).replace('.mat', '.npy'))
+        if not os.path.exists(npy_file_path):
+            raise FileNotFoundError("Image file not found:", npy_file_path)
         
-        # 图片预处理
-        img = img_transform(img)
+        # 判断文件扩展名并相应处理
+        if npy_file_path.endswith('.npy'):
+            img = np.load(npy_file_path)
+            if img.shape != (3, 800, 800):
+                raise ValueError(f"Unexpected image shape: {img.shape}")
+            # 调整维度顺序
+            img = img.transpose(1, 2, 0)
+            img = Image.fromarray((img * 255).astype('uint8'))
+            img = img_transform(img)
+        else:
+            img = Image.open(npy_file_path).convert("RGB")
+            img = img_transform(img)
+
         csi_data.append(img)
 
         data = hdf5storage.loadmat(file_name, variable_names={'jointsMatrix'})
-        joints_matrix = data['jointsMatrix'].transpose() # 17*17
+        # [x; y; c; c] 17*17*4
+        # jmatrix_label[i, :, :, :] = torch.from_numpy(data['jointsMatrix']).type(torch.FloatTensor)
+        joints_matrix = data['jointsMatrix'].transpose(2, 0, 1) # 4*17*17
         jmatrix_label[i, :, :, :] = torch.from_numpy(joints_matrix).type(torch.FloatTensor)
 
     for img in csi_data:
@@ -67,9 +79,10 @@ def getMinibatch(file_names):
 
     # 将列表转换为张量
     csi_data = torch.stack(csi_data, dim=0)
+    #print (csi_data.shape) 
     return csi_data, jmatrix_label
 
-mats = glob.glob('/home/featurize/lsy/wpcp_data/keypoints/*.mat')
+mats = glob.glob('/home/featurize/lsy/dataset/train-keypoints/*.mat')
 logging.info("Total number of samples: {}".format(len(mats)))
 mats_num = len(mats)
 batch_num = int(np.floor(mats_num/batch_size))
@@ -99,10 +112,12 @@ for epoch_index in range(num_epochs):
             file_names = mats[batch_num*batch_size:]
 
         csi_data, jmatrix_label = getMinibatch(file_names)
+        # print(jmatrix_label.size()) [16, 4, 17, 17]
 
         csi_data = Variable(csi_data.cuda())
         xy = Variable(jmatrix_label[:, 0:2, :, :].cuda())
-        confidence = Variable(jmatrix_label[:, 2:4, :, :].cuda())
+        confidence = Variable(jmatrix_label[:, 2:4, :, :].cuda()) # [c, c, y, x] 
+        # print(confidence[0].cpu().numpy())
 
         pred_xy = unet_model(csi_data)
 
@@ -120,5 +135,6 @@ for epoch_index in range(num_epochs):
     endl = time.time()
     logging.info('Epoch Time: {} minutes'.format((endl - start) / 60))
 
-torch.save(unet_model.state_dict(), '/home/featurize/lsy/WPCP/weights/unet_model_cdn.pkl')  # 保存 U-Net 模型的参数
+torch.save(unet_model.state_dict(), '/home/featurize/lsy/WPCP/weights/unet_model_changeshape.pkl')  # 保存 U-Net 模型的参数
 # summary(unet_model, (3, 256, 256), batch_size=1)
+logging.info("Training finished.")

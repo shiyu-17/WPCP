@@ -6,7 +6,7 @@ from mmcv.ops import DeformConv2dPack as DCN
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels, deformable=False):
         super(DoubleConv, self).__init__()
-        self.deform_groups = 3
+        self.deform_groups = 2
         self.deformable = deformable
 
         if self.deformable:
